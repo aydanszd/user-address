@@ -1,0 +1,77 @@
+1. SELECT 
+
+1. select * from addresses
+  Cədvəldəki bütün sətirləri və bütün sütunları çəkir. "*" "hamısı"
+  deməkdir.
+
+2. select distinct * from addresses
+  distinct təkrarlanan eyni sətirləri bir dəfə göstərir. Yəni nəticədə
+  iki tam eyni sətir varsa, biri çıxarılır.
+
+3.order by random()
+  Nəticəni hər sorğuda təsadüfi sıra ilə qaytarır. order by normalda
+  sıralama üçündür (məsələn order by id), random() isə təsadüfi sıra
+  verir.
+
+4.where id = $1
+  where şərti ilə yalnız şərtə uyğun sətri tapmaq olur. 
+
+- cast(id as text) = $1::text
+  cast(... as ...) və :: operatoru dəyərin tipini dəyişir. Burada
+  id (rəqəm) mətnə çevrilir ki, mətn ilə müqayisə olunsun.
+
+- select max(id) from addresses
+  max() sütundakı ən böyük values
+
+- select count(*) from addresses where id = $1
+  count(*) şərtə uyğun sətirlərin sayını qaytarır,Sətir var ya yoxdur
+
+- Subquery 
+  where id = (select max(id) from addresses)
+  mötərizə içərisində olan sorğu xarici mötərizəyə ötürülür 
+
+
+2. INSERT (yeni məlumat əlavə etmək)
+
+1.insert into addresses values (default, $1, $2, $3, $4)
+  Cədvələ yeni sətir əlavə edir. values içindəki dəyərlər sütunların
+  sırası ilə uyğun gəlməlidir.
+
+2.default
+  id sütunu avtomatik artdığı üçün ona dəyər verilmir,
+  bazanın özü növbəti id-ni qoyur.
+
+3.insert özü nəticə qaytarmır, buna görə ikinci sorğu lazım our
+
+3. UPDATE
+
+1.update addresses set city = $1 where id = $2
+  !!!!!set hansı sütunun hansı dəyərə dəyişəcəyini bildirir, where isə
+  hansı sətrin dəyişəcəyini seçir!!!!!!!!!!!!!!!
+
+- where yazmasam bütün sətirlərin dəyişir. 
+
+
+4. Parametrli sorğular $$$
+
+1. $1, $2, $3 sorğuya dəyər ötürmək üçün yer tutucudur. Dəyərlər
+  ikinci arqument olan arraydə verilir: pool.query(sql, [a, b]).
+
+2.Dəyərləri sorğu mətninə birləşdirmək əvəzinə bu üsulu işlətmək
+  SQL injection-un qarşısını alır.SQL injection(istifadəçinin daxil etdiyi məlumat vasitəsilə SQL sorğusuna müdaxilə edərək verilənlər bazasına icazəsiz təsir göstərmək üsuludur.)
+
+3.Nömrə massivdəki sıraya uyğun gəlir: $1 birinci elementdir,
+  $2 ikincidir.
+
+5. SQL&Node.js
+1.pool.query(...) sorğunu bazaya göndərir və await ilə nəticəni gözləyir.
+2. Nəticə result.rows array gəlir. Tək sətir lazımdırsa
+result.rows[0] götürülür.
+3.count(*) nəticəsi rows[0].count içindədir.
+
+6. Sum
+1.SQL açar sözlərini (select, from, where) kiçik hərflə də yazmaq olur,
+2.SQL böyük-kiçik hərfə həssas deyil.
+3.Hər CRUD əməliyyatı bir SQL əmrinə uyğundur:
+Create -> INSERT, Read -> SELECT, Update -> UPDATE, Delete -> DELETE.
+5.Bir controller funksiyasında bir neçə sorğu ardıcıl işlədilə bilər.
