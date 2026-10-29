@@ -1,38 +1,9 @@
 "use client";
-
 import { useEffect, useState } from "react";
-
-type User = {
-  id: number | string;
-  name: string | null;
-  surname: string | null;
-  father_name: string | null;
-  age: number | string | null;
-  city: string | null;
-  district: string | null;
-  street: string | null;
-};
-
-function isUser(value: unknown): value is User {
-  if (typeof value !== "object" || value === null) return false;
-
-  const user = value as Record<string, unknown>;
-  const isNullableString = (field: unknown) =>
-    field === null || typeof field === "string";
-
-  return (
-    (typeof user.id === "number" || typeof user.id === "string") &&
-    isNullableString(user.name) &&
-    isNullableString(user.surname) &&
-    isNullableString(user.father_name) &&
-    (user.age === null ||
-      typeof user.age === "number" ||
-      typeof user.age === "string") &&
-    isNullableString(user.city) &&
-    isNullableString(user.district) &&
-    isNullableString(user.street)
-  );
-}
+import { getUsers, API_URL } from "../api/users";
+import UsersTable from "../components/UsersTable";
+import { getErrorMessage } from "../errors/getErrorMessage";
+import type { User } from "../types/user";
 
 export default function Home() {
   const [users, setUsers] = useState<User[]>([]);
@@ -48,28 +19,10 @@ export default function Home() {
       setError(null);
 
       try {
-        const response = await fetch("http://localhost:5000/api/users", {
-          signal: controller.signal,
-        });
-
-        if (!response.ok) {
-          throw new Error(`Server error (${response.status})`);
-        }
-
-        const data: unknown = await response.json();
-        if (!Array.isArray(data) || !data.every(isUser)) {
-          throw new Error("Server returned an invalid users list.");
-        }
-
-        setUsers(data);
+        setUsers(await getUsers(controller.signal));
       } catch (requestError) {
         if (controller.signal.aborted) return;
-
-        setError(
-          requestError instanceof Error
-            ? requestError.message
-            : "Could not load users."
-        );
+        setError(getErrorMessage(requestError));
       } finally {
         if (!controller.signal.aborted) {
           setIsLoading(false);
@@ -92,7 +45,7 @@ export default function Home() {
         <div role="alert" className="space-y-3">
           <p>Could not load users: {error}</p>
           <p className="text-sm text-gray-600">
-            Make sure the backend is running at http://localhost:5000.
+            Make sure the backend is running at {API_URL}.
           </p>
           <button
             type="button"
@@ -105,37 +58,7 @@ export default function Home() {
       ) : users.length === 0 ? (
         <p>No users found.</p>
       ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full border-collapse border border-gray-300">
-            <thead>
-              <tr className="bg-gray-200">
-                <th scope="col" className="border p-3">ID</th>
-                <th scope="col" className="border p-3">Name</th>
-                <th scope="col" className="border p-3">Surname</th>
-                <th scope="col" className="border p-3">Father Name</th>
-                <th scope="col" className="border p-3">Age</th>
-                <th scope="col" className="border p-3">City</th>
-                <th scope="col" className="border p-3">District</th>
-                <th scope="col" className="border p-3">Street</th>
-              </tr>
-            </thead>
-
-            <tbody>
-              {users.map((user) => (
-                <tr key={user.id} className="text-center">
-                  <td className="border p-3">{user.id}</td>
-                  <td className="border p-3">{user.name ?? "-"}</td>
-                  <td className="border p-3">{user.surname ?? "-"}</td>
-                  <td className="border p-3">{user.father_name ?? "-"}</td>
-                  <td className="border p-3">{user.age ?? "-"}</td>
-                  <td className="border p-3">{user.city ?? "-"}</td>
-                  <td className="border p-3">{user.district ?? "-"}</td>
-                  <td className="border p-3">{user.street ?? "-"}</td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+        <UsersTable users={users} />
       )}
     </div>
   );
